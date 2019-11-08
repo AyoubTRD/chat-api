@@ -28,22 +28,56 @@ const userRoutes = require("./routes/user");
 
 app.use("/users", userRoutes);
 
+const sockets = {};
+
 const io = require("socket.io")(server);
 const User = require("./models/User");
+const Message = require("./models/Message");
 
-io.on("connection", socket => {
-  console.log("a new connection has been made to the global webSocket");
-});
+const jwt = require("jsonwebtoken");
 
-User.find({}).then(users => {
-  users.forEach(user => {
-    const userIo = io.of(`/${user._id}`);
-    userIo.on("connection", socket => {
-      io.emit("online user", user.username);
-      console.log(user.username, "connected to the socket");
-      io.emit("online user", user.username);
+const authenticate = async token => {
+  try {
+    const decode = jwt.verify(token, "auth");
+    const user = await User.findOne({ _id: decode._id, "tokens.token": token });
+    return user;
+  } catch (e) {}
+};
+
+io.on("connection", async socket => {
+  try {
+    const { token } = socket.handshake.query;
+    const user = await authenticate(token);
+
+    sockets[user._id] = socket;
+
+    socket.broadcast.emit("online user", user);
+
+    socket.on("send message", async (msg, cb = function() {}) => {
+      try {
+        console.log("sending a message");
+        console.log(msg.from === user._id);
+        if (msg.from === user._id) {
+          const message = new Message(msg);
+          await message.save();
+          sockets[msg.to].emit("received message", message);
+          cb(undefined, message);
+        }
+      } catch (e) {
+        cb(e);
+      }
     });
-  });
+
+    socket.on("greet", greet => console.log(greet));
+
+    socket.on("disconnect", () => {
+      sockets[token] = undefined;
+    });
+
+    console.log("a new connection has been made by:", user.username);
+  } catch (e) {
+    console.log(e.message);
+  }
 });
 
 module.exports = server;
