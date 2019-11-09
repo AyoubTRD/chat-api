@@ -30,6 +30,10 @@ const userSchema = new Schema(
         }
       }
     },
+    online: {
+      type: Boolean,
+      default: false
+    },
     tokens: [
       {
         token: {
