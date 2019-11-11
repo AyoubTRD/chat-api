@@ -69,7 +69,9 @@ io.on("connection", async socket => {
         msg = { ...msg, from: user._id };
         const message = new Message(msg);
         await message.save();
-        sockets[msg.to].emit("received message", message);
+        if (sockets[msg.to]) {
+          sockets[msg.to].emit("received message", message);
+        }
         cb(undefined, message);
       } catch (e) {
         cb(e);
