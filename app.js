@@ -66,9 +66,7 @@ io.on("connection", async socket => {
 
     socket.on("send message", async (msg, cb = function() {}) => {
       try {
-        console.log("sending a message");
         msg = { ...msg, from: user._id };
-        console.log(msg);
         const message = new Message(msg);
         await message.save();
         sockets[msg.to].emit("received message", message);
@@ -79,7 +77,6 @@ io.on("connection", async socket => {
     });
 
     socket.on("request messages", async userId => {
-      console.log("sending messages");
       await user.populate("sent").execPopulate();
       await user.populate("received").execPopulate();
       const sent = user.sent.filter(
