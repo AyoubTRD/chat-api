@@ -40,6 +40,9 @@ const authenticate = async token => {
   try {
     const decode = jwt.verify(token, "auth");
     const user = await User.findOne({ _id: decode._id, "tokens.token": token });
+    if (!user) {
+      return;
+    }
     user.online = true;
     await user.save();
     return user;
@@ -50,6 +53,10 @@ io.on("connection", async socket => {
   try {
     const { token } = socket.handshake.query;
     const user = await authenticate(token);
+
+    if (!user) {
+      socket.emit("connection refused");
+    }
 
     sockets[user._id] = socket;
 
