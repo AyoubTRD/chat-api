@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 
 mongoose
   .connect(
-    "mongodb+srv://ayoub:ayoub@cluster0-jwsvd.mongodb.net/chat?retryWrites=true&w=majority",
+    process.env.MONGODB_URI,
     { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }
   )
   .then(() => console.log("Connected successfully to the database"))
